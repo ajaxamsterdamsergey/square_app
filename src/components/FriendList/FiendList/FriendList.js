@@ -1,11 +1,13 @@
 import { Box } from 'components/Box';
 import PropTypes from 'prop-types';
-import { List, Avatar, Marker, Item, NameUser } from './FrendList.styled';
+import { FrendListItem } from '../FriendListItem/FriendListItem';
+//import { List, Avatar, Marker, Item, NameUser } from './FrendList.styled';
 
 export const FrendList = ({ friends }) => {
   const Friends = (
     <Box width={250} mx={'auto'} my={0} mt={30} borderRadius={5}>
-      <List>
+      <FrendListItem friends={friends} />
+      {/* <List>
         {friends.map(elData => (
           <Item key={elData.id}>
             <Marker selected={elData.isOnline}></Marker>
@@ -13,7 +15,7 @@ export const FrendList = ({ friends }) => {
             <NameUser>{elData.name}</NameUser>
           </Item>
         ))}
-      </List>
+      </List> */}
     </Box>
   );
   return Friends;
