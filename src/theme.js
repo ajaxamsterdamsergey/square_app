@@ -17,11 +17,13 @@ export const theme = {
     body: 'system-ui, sans-serif',
     heading: 'system-ui, sans-serif',
     monospace: 'Menlo, monospace',
+    dynaPuff: 'Monaco, monospace',
   },
   fontSizes: {
     xs: '12px',
     s: '14px',
     m: '16px',
+    ml: '20px',
     l: '32px',
     xl: '64px',
   },
