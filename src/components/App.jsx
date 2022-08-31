@@ -1,78 +1,122 @@
 import React, { Component } from 'react';
-import { nanoid } from 'nanoid';
-import { ContactForm } from './ContactForm/ContactForm';
-import { Contacts } from './Contacts/Contacts';
-import { Filter } from './Filter/Filter';
+import 'react-toastify/dist/ReactToastify.css';
+import { injectStyle } from 'react-toastify/dist/inject-style';
+import { ToastContainer, toast } from 'react-toastify';
+import SearchBar from './SearchBar/SearchBar';
+import { ImageGallery } from './ImageGallery/ImageGallery';
+import { Button } from './Button/Button';
+import { Loader } from './Loader/Loader';
+import Modal from './Modal/Modal';
+
 import { Box } from 'components/Box';
 import { GlobalStyle } from './GlobalStyle';
+import * as API from '../services/api';
+
+if (typeof window !== 'undefined') {
+  injectStyle();
+}
 
 export default class App extends Component {
   state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
+    items: null,
+    query: null,
+    page: 1,
+    isLoad: false,
+    showModal: false,
+    imageId: null,
   };
-  deleteTodo = id => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== id),
-    }));
+  componentDidUpdate(prevProps, prevState) {
+    const { page, query, items } = this.state;
+    if (prevState.page !== page || prevState.query !== query) {
+      if (query !== false) {
+        this.getImages(query, page);
+      }
+    }
+    if (prevState.items !== items && items.length > 12) {
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }
+  getImages = (query, page) => {
+    this.setState({ isLoad: true });
+    page = this.state.page;
+
+    API.getImages(query, page)
+      .then(res =>
+        //console.log(res)
+        this.setState(prevState => {
+          return {
+            items: [...prevState.items, ...res.hits],
+            query: query,
+          };
+        })
+      )
+      .catch(error => {
+        const mess = error.message;
+        return this.notify(mess);
+      })
+      .finally(() => {
+        this.setState({ isLoad: false });
+      });
   };
-  isAlreadyAdded = (newContact, contacts) =>
-    contacts.find(item =>
-      item.name.toLowerCase().includes(newContact.name.toLowerCase())
-    );
   handleSubmit = (values, actions) => {
-    const { contacts } = this.state;
-    const newContact = { id: nanoid(), ...values };
-    !this.isAlreadyAdded(newContact, contacts)
-      ? this.setState(prevState => ({
-          contacts: [...prevState.contacts, newContact],
-        }))
-      : alert(`${newContact.name} is already in contacts`);
-    actions.resetForm();
+    if (this.state.query === values.query) {
+      return;
+    }
+    const query = values.query;
+    if (query === '') {
+      return;
+    } else {
+      this.setState({
+        items: [],
+        page: 1,
+        query: query,
+      });
+      actions.resetForm();
+    }
   };
-  handleChangeFilter = e => {
-    this.setState({ filter: e.target.value });
+  notify = mess =>
+    toast.error(`Whoops, something went wrong:${mess}`, {
+      // transition: bounce,
+      theme: 'colored',
+    });
+  loadMore = () => {
+    this.setState(prevState => ({ page: prevState.page + 1 }));
   };
-  filterContacts = (contacts, filter) => {
-    return contacts.filter(contact =>
-      contact.name.toLowerCase().includes(filter.toLowerCase())
-    );
+  toggleModal = e => {
+    if (this.state.imageId === null) {
+      const { id } = e.target;
+      this.setState(({ showModal }) => ({
+        showModal: !showModal,
+        imageId: id,
+      }));
+    } else {
+      this.setState(({ showModal }) => ({
+        showModal: !showModal,
+        imageId: null,
+      }));
+    }
   };
   render() {
-    const { contacts, filter } = this.state;
-    const filteredContacts = this.filterContacts(contacts, filter);
+    const { items, isLoad, showModal, imageId } = this.state;
     return (
-      <Box
-        width={360}
-        padding={32}
-        m="auto"
-        mt={30}
-        mb={30}
-        boxShadow="0 2px 5px rgba(0,0,0,0.2), 0 4px 6px rgba(0,0,0,0.2)"
-        borderRadius="2px"
-      >
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          gridGap="24px"
-        >
-          <h1>PhoneBook</h1>
-          <ContactForm onSubmit={this.handleSubmit} />
-          <div>
-            <h2 style={{ width: 'min-content', margin: '0 auto' }}>Contacts</h2>
-            <Filter onChange={this.handleChangeFilter}></Filter>
-            <Contacts
-              contacts={filteredContacts}
-              deleteTodo={this.deleteTodo}
-            ></Contacts>
-          </div>
-        </Box>
+      <Box>
+        {showModal && (
+          <Modal onClose={this.toggleModal} items={items} idImage={imageId} />
+        )}
+        <SearchBar onSubmit={this.handleSubmit} />
+        {items && (
+          <Box minHeight={800}>
+            <ImageGallery imagesList={items} onClick={this.toggleModal} />
+            {isLoad === true && <Loader />}
+            {items.length > 0 && (
+              <Button onClick={this.loadMore} children={'Load more...'} />
+            )}
+            <ToastContainer autoClose={5000} />
+          </Box>
+        )}
         <GlobalStyle />
       </Box>
     );
