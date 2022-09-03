@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 import 'react-toastify/dist/ReactToastify.css';
 import { injectStyle } from 'react-toastify/dist/inject-style';
 import { ToastContainer, toast } from 'react-toastify';
@@ -16,109 +16,87 @@ if (typeof window !== 'undefined') {
   injectStyle();
 }
 
-export default class App extends Component {
-  state = {
-    items: null,
-    query: null,
-    page: 1,
-    isLoad: false,
-    showModal: false,
-    imageId: null,
-  };
-  componentDidUpdate(prevProps, prevState) {
-    const { page, query, items } = this.state;
-    if (prevState.page !== page || prevState.query !== query) {
-      if (query !== false) {
-        this.getImages(query, page);
+export default function App() {
+  const [items, setItems] = useState([]);
+  const [query, setQuery] = useState(null);
+  const [page, setPage] = useState(1);
+  const [isLoad, setIsLoad] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [imageId, setImageId] = useState(null);
+
+  useEffect(() => {
+    async function getImages(query, page) {
+      if (query === null) {
+        return;
+      }
+      setIsLoad(true);
+      try {
+        const res = await API.getImages(query, page);
+        setItems(prevState => [...prevState, ...res.hits]);
+        setQuery(query);
+
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: 'smooth',
+        });
+      } catch (error) {
+        const mess = error.message;
+        return notify(mess);
+      } finally {
+        setIsLoad(false);
       }
     }
-    if (prevState.items !== items && items.length > 12) {
-      window.scrollTo({
-        top: document.documentElement.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
-  }
-  getImages = (query, page) => {
-    this.setState({ isLoad: true });
-    page = this.state.page;
+    getImages(query, page);
+  }, [query, page]);
 
-    API.getImages(query, page)
-      .then(res =>
-        //console.log(res)
-        this.setState(prevState => {
-          return {
-            items: [...prevState.items, ...res.hits],
-            query: query,
-          };
-        })
-      )
-      .catch(error => {
-        const mess = error.message;
-        return this.notify(mess);
-      })
-      .finally(() => {
-        this.setState({ isLoad: false });
-      });
-  };
-  handleSubmit = (values, actions) => {
-    if (this.state.query === values.query) {
+  const handleSubmit = (values, actions) => {
+    if (query === values.query) {
       return;
     }
-    const query = values.query;
-    if (query === '') {
+    const querySubmit = values.query;
+    if (querySubmit === '') {
       return;
     } else {
-      this.setState({
-        items: [],
-        page: 1,
-        query: query,
-      });
+      setItems([]);
+      setQuery(querySubmit);
+      setPage(1);
       actions.resetForm();
     }
   };
-  notify = mess =>
+  const notify = mess =>
     toast.error(`Whoops, something went wrong:${mess}`, {
-      // transition: bounce,
       theme: 'colored',
     });
-  loadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const loadMore = () => {
+    setPage(prevState => prevState + 1);
   };
-  toggleModal = e => {
-    if (this.state.imageId === null) {
+  const toggleModal = e => {
+    if (imageId === null) {
       const { id } = e.target;
-      this.setState(({ showModal }) => ({
-        showModal: !showModal,
-        imageId: id,
-      }));
+      setShowModal(!showModal);
+      setImageId(id);
     } else {
-      this.setState(({ showModal }) => ({
-        showModal: !showModal,
-        imageId: null,
-      }));
+      setShowModal(!showModal);
+      setImageId(null);
     }
   };
-  render() {
-    const { items, isLoad, showModal, imageId } = this.state;
-    return (
-      <Box>
-        {showModal && (
-          <Modal onClose={this.toggleModal} items={items} idImage={imageId} />
-        )}
-        <SearchBar onSubmit={this.handleSubmit} />
-        {items && (
-          <Box minHeight={800}>
-            <ImageGallery imagesList={items} onClick={this.toggleModal} />
-            {isLoad === true && <Loader />}
-            {items.length > 0 && (
-              <Button onClick={this.loadMore} children={'Load more...'} />
-            )}
-            <ToastContainer autoClose={5000} />
-          </Box>
-        )}
-        <GlobalStyle />
-      </Box>
-    );
-  }
+  return (
+    <Box>
+      {showModal && (
+        <Modal onClose={toggleModal} items={items} idImage={imageId} />
+      )}
+      <SearchBar onSubmit={handleSubmit} />
+      {items.length > 0 && (
+        <Box minHeight={800}>
+          <ImageGallery imagesList={items} onClick={toggleModal} />
+          {isLoad && <Loader />}
+          {items.length > 0 && (
+            <Button onClick={loadMore} children={'Load more...'} />
+          )}
+          <ToastContainer autoClose={5000} />
+        </Box>
+      )}
+      <GlobalStyle />
+    </Box>
+  );
 }
