@@ -3,11 +3,11 @@ import 'react-toastify/dist/ReactToastify.css';
 import { injectStyle } from 'react-toastify/dist/inject-style';
 import { ToastContainer, toast } from 'react-toastify';
 import SearchBar from './SearchBar/SearchBar';
-import { ImageGallery } from './ImageGallery/ImageGallery';
-import { Button } from './Button/Button';
+import { Square } from './Square/Square';
+import { InfoPanel } from './InfoPanel/InfoPanel';
+import { InfoMessage } from './InfoMessage/InfoMessage';
+import useLocalStorage from '../hooks/useLocalStorage';
 import { Loader } from './Loader/Loader';
-import Modal from './Modal/Modal';
-
 import { Box } from 'components/Box';
 import { GlobalStyle } from './GlobalStyle';
 import * as API from '../services/api';
@@ -17,28 +17,33 @@ if (typeof window !== 'undefined') {
 }
 
 export default function App() {
+  const [squareCount, setSquareCount] = useLocalStorage('squareCount', '');
+  const [rowColumn, setRowColumn] = useState([]);
   const [items, setItems] = useState([]);
-  const [query, setQuery] = useState(null);
-  const [page, setPage] = useState(1);
+  const [startValue, setStartValue] = useState(true);
+  const [change, setchange] = useState(false);
   const [isLoad, setIsLoad] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [imageId, setImageId] = useState(null);
+
+  const getColumnRow = (idx, selectedSquare) => {
+    const column = (idx % squareCount) + 1;
+    const row = Math.trunc(idx / squareCount) + 1;
+    const customId = idx;
+    if (!selectedSquare) {
+      setRowColumn(prevState => [...prevState, { column, row, customId }]);
+    } else {
+      setRowColumn(prevState =>
+        prevState.filter(contact => contact.customId !== idx)
+      );
+    }
+  };
 
   useEffect(() => {
-    async function getImages(query, page) {
-      if (query === null) {
-        return;
-      }
-      setIsLoad(true);
+    setIsLoad(true);
+    async function getData() {
       try {
-        const res = await API.getImages(query, page);
-        setItems(prevState => [...prevState, ...res.hits]);
-        setQuery(query);
-
-        window.scrollTo({
-          top: document.documentElement.scrollHeight,
-          behavior: 'smooth',
-        });
+        const res = await API.getData();
+        setItems(prevState => res);
+        setchange(false);
       } catch (error) {
         const mess = error.message;
         return notify(mess);
@@ -46,56 +51,54 @@ export default function App() {
         setIsLoad(false);
       }
     }
-    getImages(query, page);
-  }, [query, page]);
+    getData();
+  }, [squareCount]);
 
-  const handleSubmit = (values, actions) => {
-    if (query === values.query) {
-      return;
-    }
-    const querySubmit = values.query;
-    if (querySubmit === '') {
-      return;
-    } else {
-      setItems([]);
-      setQuery(querySubmit);
-      setPage(1);
-      actions.resetForm();
-    }
+  const handleSubmit = event => {
+    event.preventDefault();
+  };
+  const handleChange = event => {
+    setSquareCount(event.target.value);
+    setchange(true);
+    setRowColumn([]);
+    setStartValue(true);
   };
   const notify = mess =>
     toast.error(`Whoops, something went wrong:${mess}`, {
       theme: 'colored',
     });
-  const loadMore = () => {
-    setPage(prevState => prevState + 1);
-  };
-  const toggleModal = e => {
-    if (imageId === null) {
-      const { id } = e.target;
-      setShowModal(!showModal);
-      setImageId(id);
-    } else {
-      setShowModal(!showModal);
-      setImageId(null);
-    }
+  const toggleButton = e => {
+    setStartValue(!startValue);
   };
   return (
     <Box>
-      {showModal && (
-        <Modal onClose={toggleModal} items={items} idImage={imageId} />
-      )}
-      <SearchBar onSubmit={handleSubmit} />
       {items.length > 0 && (
-        <Box minHeight={800}>
-          <ImageGallery imagesList={items} onClick={toggleModal} />
-          {isLoad && <Loader />}
-          {items.length > 0 && (
-            <Button onClick={loadMore} children={'Load more...'} />
-          )}
-          <ToastContainer autoClose={5000} />
-        </Box>
+        <SearchBar
+          items={items}
+          onChange={handleChange}
+          change={change}
+          onSubmit={handleSubmit}
+          onClick={toggleButton}
+          startValue={startValue}
+          squareCount={squareCount}
+        />
       )}
+      {isLoad && <Loader />}
+      <Box>
+        {startValue && squareCount !== '' && <InfoMessage />}
+        <Box display="flex" mt={20} justifyContent="space-around">
+          {squareCount !== '' && (
+            <Square
+              squareCount={squareCount}
+              change={change}
+              getColumnRow={getColumnRow}
+              startValue={startValue}
+            />
+          )}
+          <InfoPanel rowColumn={rowColumn} />
+        </Box>
+      </Box>
+      <ToastContainer autoClose={5000} />
       <GlobalStyle />
     </Box>
   );

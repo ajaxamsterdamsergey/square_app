@@ -1,11 +1,10 @@
 import axios from 'axios';
-const API_KEY = '15433400-0fb5bd3684436b571a53694dd';
+//const API_KEY = '15433400-0fb5bd3684436b571a53694dd';
 const baseURL =
-  (axios.defaults.baseURL = `https://pixabay.com/api/?key=${API_KEY}`);
+  (axios.defaults.baseURL = `https://633beafec1910b5de0cc6c8a.mockapi.io/`);
 
-export const getImages = async (query, page) => {
-  const response = await axios.get(
-    `${baseURL}&q=${query}&page=${page}&per_page=12`
-  );
+export const getData = async () => {
+  const response = await axios.get(`${baseURL}game`);
   return response.data;
 };
+

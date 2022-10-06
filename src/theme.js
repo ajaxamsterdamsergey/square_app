@@ -35,6 +35,10 @@ export const theme = {
     body: 1.5,
     heading: 1.125,
   },
+  display: {
+    none: 'none',
+    block: 'block',
+  },
   borders: {
     none: 'none',
     normal: '1px solid',

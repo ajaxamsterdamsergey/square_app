@@ -1,7 +1,21 @@
 import styled from 'styled-components';
 import { Field, Form } from 'formik';
 
-export const Input = styled(Field)`
+export const Label = styled.label`
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  width: 100%;
+  color: aqua;
+  font: inherit;
+  font-size: ${p => p.theme.fontSizes.ml};
+  border: ${p => p.theme.borders.none};
+  outline: none;
+`;
+
+export const Input = styled.select`
+  position: relative;
+  z-index: 0;
   display: inline-block;
   width: 100%;
   font: inherit;
@@ -11,6 +25,10 @@ export const Input = styled(Field)`
   padding-left: ${p => p.theme.space[2]} px;
   padding-right: ${p => p.theme.space[2]} px;
   &::placeholder {
+    pointer-events: none;
+    position: relative;
+    z-index: 0;
+    color: red;
     font: inherit;
     font-size: ${p => p.theme.fontSizes.m};
   }
@@ -34,16 +52,17 @@ export const Header = styled.header`
   box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2),
     0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
 `;
-export const SearchForm = styled(Form)`
+export const SearchForm = styled.form`
+  position: relative;
   display: flex;
   align-items: center;
-  width: 100%;
-  max-width: 600px;
+  width: 80%;
+  max-width: 300px;
   background-color: #fff;
   border-radius: ${p => p.theme.radii.sm};
   overflow: hidden;
 `;
-export const Button = styled.button`
+export const ButtonInput = styled.button`
   display: inline-block;
   width: 48px;
   height: 48px;
@@ -55,4 +74,7 @@ export const Button = styled.button`
   &:hover {
     opacity: 1;
   }
+  pointer-events: ${({ theme, disabled }) => {
+    return disabled ? theme.display.none : theme.display.block;
+  }};
 `;
