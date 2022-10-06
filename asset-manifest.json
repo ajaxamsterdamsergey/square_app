@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/square_app/static/css/main.c8e6b019.css",
+    "main.js": "/square_app/static/js/main.33fd859b.js",
+    "index.html": "/square_app/index.html",
+    "main.c8e6b019.css.map": "/square_app/static/css/main.c8e6b019.css.map",
+    "main.33fd859b.js.map": "/square_app/static/js/main.33fd859b.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.c8e6b019.css",
+    "static/js/main.33fd859b.js"
+  ]
+}
